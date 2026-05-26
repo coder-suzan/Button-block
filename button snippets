@@ -1,0 +1,112 @@
+{%- comment -%}
+  Renders a button element as an <a> tag when a URL is provided, or a <button> element otherwise.
+
+  Accepts:
+  - label: {String} Required. The button text.
+  - url: {String} Optional. The href for the button. Renders an <a> tag when present.
+  - button_type: {String} Optional. The type attribute for <button> elements. Accepts 'button', 'submit', 'reset'. Default: 'button'.
+  - variant: {String} Optional. The visual style of the button. Accepts 'primary', 'secondary', 'outline', 'none'. Default: 'primary'.
+  - hover_effect: {String} Optional. Animation class applied on hover. Overrides the global button_style setting.
+  - size: {String} Optional. The button size. Accepts 'sm', 'lg'. Omit for the default medium size.
+  - full_width: {Boolean} Optional. Set to true to make the button full width.
+  - icon: {String} Optional. The name of an icon to render inside the button.
+  - icon_position: {String} Optional. The position of the icon. Accepts 'left', 'right'. Default: 'left'.
+  - icon_style: {String} Optional. Additional CSS class applied to the icon element. E.g. 'icon--solid'.
+  - custom_icon: {String} Optional. Raw SVG HTML to render as the icon. Takes precedence over the named icon.
+  - custom_class: {String} Optional. Additional CSS classes to append to the button element.
+  - disabled: {Boolean} Optional. Set to true to disable the button and add aria-disabled="true".
+  - new_tab: {Boolean} Optional. Set to true to open the link in a new tab (target="_blank").
+  - aria_label: {String} Optional. The aria-label attribute value.
+  - attributes: {String} Optional. A raw HTML attribute string to append. Example: 'data-foo="bar"'.
+
+  Usage:
+  {%- render 'button', label: section.settings.button_label, url: section.settings.button_url -%}
+
+  Submit button:
+  {%- render 'button', label: 'Subscribe', button_type: 'submit' -%}
+{%- endcomment -%}
+
+{%- liquid
+  # Element tag
+  if url != blank
+    assign tag = 'a'
+  else
+    assign tag = 'button'
+  endif
+
+  # CSS class list
+  assign btn_variant = variant | default: 'primary'
+  assign btn_classes = 'btn btn--' | append: btn_variant
+
+  if size != blank
+    assign btn_classes = btn_classes | append: ' btn--' | append: size
+  endif
+
+  if full_width
+    assign btn_classes = btn_classes | append: ' btn--full'
+  endif
+
+  if icon != blank or custom_icon != blank
+    assign btn_classes = btn_classes | append: ' btn--icon'
+  endif
+
+  # Hover effect: per-render param overrides global; applies to all variants
+  assign btn_effect = hover_effect | default: settings.button_style
+  if btn_effect != blank
+    assign btn_classes = btn_classes | append: ' ' | append: btn_effect
+  endif
+
+  if custom_class != blank
+    assign btn_classes = btn_classes | append: ' ' | append: custom_class
+  endif
+
+  # Icon position
+  assign icon_pos = icon_position | default: 'left'
+-%}
+
+<{{ tag }}
+  class="{{ btn_classes }}"
+  {{ block.shopify_attributes }}
+  {%- if tag == 'a' %}
+    href="{{ url }}"
+  {%- endif -%}
+  {%- if tag == 'button' %}
+    type="{{ button_type | default: 'button' }}"
+  {%- endif -%}
+  {%- if disabled %}
+    {%- if tag == 'button' %} disabled{%- endif %}
+    aria-disabled="true"
+  {%- endif -%}
+  {%- if new_tab and tag == 'a' %}
+    target="_blank"
+    rel="noopener noreferrer"
+  {%- endif -%}
+  {%- if aria_label != blank %}
+    aria-label="{{ aria_label }}"
+  {%- endif %}
+  {{- attributes -}}
+>
+  <span class="btn__content">
+    {%- if icon_pos == 'left' and icon != blank or custom_icon != blank -%}
+      <span class="btn__icon btn__icon--left {{ icon_style }}" aria-hidden="true">
+        {%- if custom_icon != blank -%}
+          {{ custom_icon }}
+        {%- else -%}
+          {%- render 'icon', icon: icon, size: 'md' -%}
+        {%- endif -%}
+      </span>
+    {%- endif -%}
+ 
+    <span class="btn__text {% if btn_variant == 'plain' %}link-underline-reveal--animation{% endif %}">{{- label | escape -}}</span>
+
+    {%- if icon_pos == 'right' and icon != blank or custom_icon != blank -%}
+      <span class="btn__icon btn__icon--right {{ icon_style }}" aria-hidden="true">
+        {%- if custom_icon != blank -%}
+          {{ custom_icon }}
+        {%- else -%}
+          {%- render 'icon', icon: icon, size: 'md' -%}
+        {%- endif -%}
+      </span>
+    {%- endif -%}
+  </span>
+</{{ tag }}>
